@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeoCheck Staff - Geofenced Attendance & Admin Override</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="h-full flex flex-col bg-slate-900 text-slate-100 antialiased overflow-x-hidden">
+
+  <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700/80 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-sky-500/20">
+            <i class="fa-solid fa-location-dot text-xl"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">GeoCheck Staff</h1>
+            <p class="text-xs text-slate-400">Attendance & Admin Manual Override</p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs (Desktop) -->
+        <nav class="hidden md:flex space-x-1 bg-slate-900/60 p-1.5 rounded-xl border border-slate-700/50">
+          <button onclick="switchTab('terminal')" id="nav-terminal" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 text-sky-400 bg-slate-800 shadow-sm">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Live Terminal</span>
+          </button>
+          <button onclick="switchTab('roster')" id="nav-roster" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 text-slate-400 hover:text-slate-200">
+            <i class="fa-solid fa-users"></i>
+            <span>Staff Roster & Hours</span>
+          </button>
+          <button onclick="switchTab('logs')" id="nav-logs" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 text-slate-400 hover:text-slate-200">
+            <i class="fa-solid fa-file-pen"></i>
+            <span>Attendance Logs & Admin Override</span>
+          </button>
+          <button onclick="switchTab('settings')" id="nav-settings" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 text-slate-400 hover:text-slate-200">
+            <i class="fa-solid fa-sliders"></i>
+            <span>Geofence Setup</span>
+          </button>
+        </nav>
+
+        <!-- Live Clock & Mobile Menu Toggle -->
+        <div class="flex items-center space-x-3">
+          <div class="hidden sm:block text-right">
+            <div id="live-time" class="text-sm font-mono font-bold text-slate-200">--:--:--</div>
+            <div id="live-date" class="text-xs text-slate-400">---</div>
+          </div>
+          <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-slate-400 hover:text-white rounded-lg focus:outline-none">
+            <i class="fa-solid fa-bars text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Nav Menu -->
+    <div id="mobile-menu" class="hidden md:hidden border-t border-slate-700/80 bg-slate-800 px-4 pt-2 pb-4 space-y-1">
+      <button onclick="switchTab('terminal'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-sky-400 bg-slate-900/50 flex items-center space-x-2">
+        <i class="fa-solid fa-clock-rotate-left w-5"></i><span>Live Terminal</span>
+      </button>
+      <button onclick="switchTab('roster'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 flex items-center space-x-2">
+        <i class="fa-solid fa-users w-5"></i><span>Staff Roster & Hours</span>
+      </button>
+      <button onclick="switchTab('logs'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 flex items-center space-x-2">
+        <i class="fa-solid fa-file-pen w-5"></i><span>Attendance Logs & Admin Override</span>
+      </button>
+      <button onclick="switchTab('settings'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-slate-300 flex items-center space-x-2">
+        <i class="fa-solid fa-sliders w-5"></i><span>Geofence Setup</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <section id="tab-terminal" class="space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Staff Profile Selection -->
+        <div class="bg-slate-800/90 rounded-2xl border border-slate-700/70 p-6 shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-sm uppercase tracking-wider font-semibold text-slate-400">Select Active Profile</h2>
+              <span class="text-xs px-2.5 py-1 rounded-full bg-slate-700 text-slate-300 font-medium">Terminal Mode</span>
+            </div>
+
+            <label class="block text-xs font-medium text-slate-400 mb-1">Operating Staff Member</label>
+            <div class="relative mb-4">
+              <select id="active-staff-select" onchange="onStaffSelectChange()" class="w-full bg-slate-900 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sky-500 appearance-none font-medium text-base">
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                <i class="fa-solid fa-chevron-down"></i>
+              </div>
+            </div>
+
+            <!-- Active Selected Card -->
+            <div id="selected-staff-card" class="bg-slate-900/80 rounded-xl p-4 border border-slate-700/60 mb-4">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-700/60 text-center">
+            <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-xs text-slate-400 block">Today's Hours</span>
+              <span id="card-today-hours" class="text-lg font-bold text-sky-400">0.00 hrs</span>
+            </div>
+            <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
+              <span class="text-xs text-slate-400 block">Monthly Total</span>
+              <span id="card-month-hours" class="text-lg font-bold text-indigo-400">0.00 hrs</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Middle: Geofence Distance Radar -->
+        <div class="bg-slate-800/90 rounded-2xl border border-slate-700/70 p-6 shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-sm uppercase tracking-wider font-semibold text-slate-400">Geofence Proximity Radar</h2>
+              <button onclick="fetchCurrentLocation()" class="text-xs text-sky-400 hover:text-sky-300 flex items-center space-x-1">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span>Refresh GPS</span>
+              </button>
+            </div>
+
+            <div class="relative bg-slate-900 rounded-xl p-5 border border-slate-700/80 text-center overflow-hidden mb-4">
+              <div id="geofence-pulse-bg" class="absolute inset-0 opacity-10 transition-colors duration-500 bg-emerald-500"></div>
+
+              <div class="relative z-10">
+                <div id="geo-status-icon" class="w-14 h-14 mx-auto rounded-full bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-2xl text-slate-400 mb-2 transition-all">
+                  <i class="fa-solid fa-location-crosshairs"></i>
+                </div>
+                <div id="geo-distance-display" class="text-3xl font-extrabold text-white tracking-tight">-- m</div>
+                <div id="geo-status-badge" class="mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                  Checking Geolocation...
+                </div>
+              </div>
+            </div>
+
+            <div class="space-y-2 text-xs text-slate-300 bg-slate-900/50 p-3 rounded-lg border border-slate-800">
+              <div class="flex justify-between">
+                <span class="text-slate-400">Work Target:</span>
+                <span id="work-location-name-display" class="font-medium text-slate-200">Main Office</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Allowed Perimeter:</span>
+                <span id="work-radius-display" class="font-medium text-slate-200">100 meters</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Your Coordinates:</span>
+                <span id="user-coords-display" class="font-mono text-slate-400">Detecting...</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-slate-700/60 flex items-center justify-between">
+            <span class="text-xs text-amber-400 flex items-center space-x-1.5 font-medium">
+              <i class="fa-solid fa-flask text-sm"></i>
+              <span>Demo Geofence Bypass:</span>
+            </span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="bypass-geofence-toggle" onchange="toggleBypassGeofence(this.checked)" class="sr-only peer">
+              <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Right: Clock Button -->
+        <div class="bg-slate-800/90 rounded-2xl border border-slate-700/70 p-6 shadow-xl flex flex-col justify-between">
+          <div>
+            <h2 class="text-sm uppercase tracking-wider font-semibold text-slate-400 mb-4">Clock Action</h2>
+
+            <div id="session-timer-box" class="bg-slate-900 rounded-xl p-5 border border-slate-700 text-center mb-6 relative overflow-hidden">
+              <span class="text-xs font-semibold uppercase tracking-widest text-slate-400 block mb-1">Active Session Timer</span>
+              <div id="session-timer-clock" class="text-4xl font-mono font-bold text-slate-500 tracking-wider">00:00:00</div>
+              <div id="session-start-time" class="text-xs text-slate-400 mt-2">Not currently checked in</div>
+            </div>
+          </div>
+
+          <div>
+            <button id="clock-btn" onclick="handleClockButtonClick()" class="w-full py-5 px-6 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center space-x-3 transition-all duration-300 bg-slate-700 text-slate-400 cursor-not-allowed" disabled>
+              <i id="clock-btn-icon" class="fa-solid fa-lock"></i>
+              <span id="clock-btn-text">Checking Geofence...</span>
+            </button>
+            <p id="clock-btn-subtext" class="text-xs text-center text-slate-400 mt-3">Move within range to unlock check-in button</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Today Team Activity Grid -->
+      <div class="bg-slate-800/90 rounded-2xl border border-slate-700/70 p-6 shadow-xl">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-2">
+          <div>
+            <h3 class="text-lg font-bold text-white flex items-center space-x-2">
+              <i class="fa-solid fa-users-viewfinder text-sky-400"></i>
+              <span>Today's Live Team Activity</span>
+            </h3>
+            <p class="text-xs text-slate-400">Real-time status of registered staff</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+              <span id="count-checked-in">0</span> Checked In
+            </span>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700 text-slate-300">
+              <span id="count-checked-out">0</span> Checked Out
+            </span>
+          </div>
+        </div>
+
+        <div id="team-live-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-roster" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-800/90 p-5 rounded-2xl border border-slate-700/70">
+        <div>
+          <h2 class="text-xl font-bold text-white">Staff Roster & Hours Overview</h2>
+          <p class="text-xs text-slate-400">Manage team profiles and view accumulated hours summary</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button onclick="openAddStaffModal()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-sky-600/20 flex items-center space-x-2 transition-all">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Add Staff Member</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="relative flex-1 max-w-md">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+          <input type="text" id="roster-search" oninput="renderRosterTable()" placeholder="Search staff by name or role..." class="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center space-x-2">
+            <label class="text-xs text-slate-400 font-medium">Month:</label>
+            <input type="month" id="roster-month-filter" onchange="renderRosterTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <label class="text-xs text-slate-400 font-medium">Sort:</label>
+            <select id="roster-sort-by" onchange="renderRosterTable()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500">
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+              <option value="today-desc">Today Hours (High-Low)</option>
+              <option value="month-desc">Monthly Hours (High-Low)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div id="roster-card-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      </div>
+    </section>
+
+    <section id="tab-logs" class="hidden space-y-6">
+      
+      <!-- Top Action Bar for Admin Override -->
+      <div class="bg-slate-800/90 p-5 rounded-2xl border border-slate-700/70 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+              <i class="fa-solid fa-user-gear text-amber-400"></i>
+              <span>Attendance Records & Admin Override</span>
+            </h2>
+            <p class="text-xs text-slate-400">Audit check-ins, add missing punches manually, or correct forgotten check-outs</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="openManualEntryModal()" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-amber-600/20 flex items-center space-x-2 transition-all">
+              <i class="fa-solid fa-plus-circle"></i>
+              <span>+ Add Manual Entry</span>
+            </button>
+            <button onclick="exportLogsCSV()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl shadow-lg shadow-emerald-600/20 flex items-center space-x-2 transition-all">
+              <i class="fa-solid fa-file-csv"></i>
+              <span>Export CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-slate-700/60">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Staff Filter</label>
+            <select id="log-staff-filter" onchange="renderLogsTable()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+              <option value="ALL">All Staff Members</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Date Filter</label>
+            <input type="date" id="log-date-filter" onchange="renderLogsTable()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Type / Status</label>
+            <select id="log-status-filter" onchange="renderLogsTable()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+              <option value="ALL">All Entries</option>
+              <option value="VALID">GPS Check-In</option>
+              <option value="MANUAL">Admin Manual Override</option>
+              <option value="BYPASS">Demo Bypass</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1">Sort Order</label>
+            <select id="log-sort" onchange="renderLogsTable()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+              <option value="time-desc">Newest First</option>
+              <option value="time-asc">Oldest First</option>
+              <option value="hours-desc">Duration (High-Low)</option>
+              <option value="staff-asc">Staff Name (A-Z)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Editable Logs Table -->
+      <div class="bg-slate-800/90 rounded-2xl border border-slate-700/70 overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-900/80 text-slate-400 border-b border-slate-700 font-medium text-xs uppercase tracking-wider">
+                <th class="py-3.5 px-4">Staff Member</th>
+                <th class="py-3.5 px-4">Date</th>
+                <th class="py-3.5 px-4">Check In</th>
+                <th class="py-3.5 px-4">Check Out</th>
+                <th class="py-3.5 px-4 text-center">Duration</th>
+                <th class="py-3.5 px-4">Verification / Note</th>
+                <th class="py-3.5 px-4 text-right">Admin Actions</th>
+              </tr>
+            </thead>
+            <tbody id="logs-table-body" class="divide-y divide-slate-700/60 text-slate-200 font-medium">
+            </tbody>
+          </table>
+        </div>
+        <div id="logs-empty-state" class="hidden p-8 text-center text-slate-400">
+          <i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-600 block"></i>
+          <p>No attendance records match your criteria.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-settings" class="hidden space-y-6">
+      <div class="max-w-3xl mx-auto bg-slate-800/90 rounded-2xl border border-slate-700/70 p-6 md:p-8 shadow-xl space-y-6">
+        <div>
+          <h2 class="text-xl font-bold text-white flex items-center space-x-2">
+            <i class="fa-solid fa-earth-americas text-sky-400"></i>
+            <span>Geofence Location Setup</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-1">Set work site GPS coordinates or choose pre-loaded location presets.</p>
+        </div>
+
+        <!-- Location Preset Selector Buttons -->
+        <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/80 space-y-2">
+          <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider block">Quick Presets:</span>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" onclick="loadLocationPreset('CGH')" class="px-3 py-1.5 bg-sky-600/30 hover:bg-sky-600/50 border border-sky-500/40 text-sky-300 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-all">
+              <i class="fa-solid fa-hospital"></i>
+              <span>Changi General Hospital (CGH)</span>
+            </button>
+            <button type="button" onclick="loadLocationPreset('HQ')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 border border-slate-600 text-slate-200 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-all">
+              <i class="fa-solid fa-building"></i>
+              <span>Main Office HQ</span>
+            </button>
+          </div>
+        </div>
+
+        <form id="geofence-form" onsubmit="saveGeofenceSettings(event)" class="space-y-5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Location Name</label>
+            <input type="text" id="setting-location-name" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="e.g. Changi General Hospital">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Target Latitude</label>
+              <input type="number" step="any" id="setting-latitude" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-mono focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="e.g. 1.3408">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Target Longitude</label>
+              <input type="number" step="any" id="setting-longitude" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-mono focus:ring-2 focus:ring-sky-500 focus:outline-none" placeholder="e.g. 103.9495">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+              Allowed Radius Radius (Meters): <span id="radius-val-display" class="text-sky-400 font-mono">250m</span>
+            </label>
+            <input type="range" id="setting-radius" min="10" max="1000" step="10" oninput="document.getElementById('radius-val-display').innerText = this.value + 'm'" class="w-full accent-sky-500">
+            <div class="flex justify-between text-xs text-slate-500 mt-1">
+              <span>10m (Building)</span>
+              <span>250m (Hospital Campus)</span>
+              <span>1000m (Large Area)</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="text-xs text-slate-300">
+              <span class="font-semibold text-white block">Use Device GPS Position</span>
+              <span>Set target to your current live GPS position.</span>
+            </div>
+            <button type="button" onclick="setCurrentLocationAsTarget()" class="px-3.5 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg shrink-0 transition-all flex items-center space-x-1.5">
+              <i class="fa-solid fa-crosshairs text-sky-400"></i>
+              <span>Grab My Position</span>
+            </button>
+          </div>
+
+          <div class="pt-4 flex items-center justify-between border-t border-slate-700">
+            <button type="button" onclick="loadSampleMockData()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-500/30 text-xs font-semibold rounded-xl transition-all">
+              <i class="fa-solid fa-database mr-1"></i> Reset Sample Data
+            </button>
+            <button type="submit" class="px-6 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-sky-600/30 transition-all">
+              Save Location Settings
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="modal-add-staff" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+      <button onclick="closeAddStaffModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <h3 class="text-lg font-bold text-white mb-1">Add New Staff Profile</h3>
+      <p class="text-xs text-slate-400 mb-4">Register a team profile for attendance logging.</p>
+
+      <form id="form-add-staff" onsubmit="handleAddStaffSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Full Name</label>
+          <input type="text" id="new-staff-name" required placeholder="e.g. Sarah Jenkins" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Role / Job Title</label>
+          <input type="text" id="new-staff-role" placeholder="e.g. Medical Officer" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Department</label>
+          <select id="new-staff-dept" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+            <option value="Emergency Dept">Emergency Dept</option>
+            <option value="Nursing">Nursing</option>
+            <option value="Operations">Operations</option>
+            <option value="Pharmacy">Pharmacy</option>
+            <option value="Administration">Administration</option>
+          </select>
+        </div>
+
+        <div class="pt-3 flex justify-end space-x-2">
+          <button type="button" onclick="closeAddStaffModal()" class="px-4 py-2 bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-600">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-sky-600 text-white rounded-xl text-xs font-semibold hover:bg-sky-500 shadow-lg shadow-sky-600/30">Save Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-manual-log" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+      <button onclick="closeManualLogModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="flex items-center space-x-2 mb-1">
+        <i class="fa-solid fa-pen-to-square text-amber-400 text-lg"></i>
+        <h3 id="manual-modal-title" class="text-lg font-bold text-white">Admin Manual Entry Override</h3>
+      </div>
+      <p class="text-xs text-slate-400 mb-4">Add missing punches or correct forgotten check-ins/outs for staff.</p>
+
+      <form id="form-manual-log" onsubmit="handleManualLogSubmit(event)" class="space-y-4">
+        <input type="hidden" id="edit-log-id" value="">
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Staff Member</label>
+          <select id="manual-staff-id" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </select>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Check-In Date & Time</label>
+            <input type="datetime-local" id="manual-checkin-time" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Check-Out Date & Time (Optional)</label>
+            <input type="datetime-local" id="manual-checkout-time" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-medium text-slate-300 mb-1">Reason / Admin Note</label>
+          <input type="text" id="manual-reason" placeholder="e.g. Forgot phone at home, Phone battery died, Manual correction" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+
+        <div class="pt-3 flex justify-end space-x-2">
+          <button type="button" onclick="closeManualLogModal()" class="px-4 py-2 bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold hover:bg-slate-600">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-amber-600 text-white rounded-xl text-xs font-semibold hover:bg-amber-500 shadow-lg shadow-amber-600/30">Save Entry Override</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY_STAFF = 'geocheck_staff_list_v3';
+    const STORAGE_KEY_LOGS = 'geocheck_attendance_logs_v3';
+    const STORAGE_KEY_SETTINGS = 'geocheck_settings_v3';
+
+    // Default Pre-loaded Settings (Changi General Hospital)
+    let geofenceSettings = {
+      locationName: "Changi General Hospital (CGH)",
+      latitude: 1.3408,
+      longitude: 103.9495,
+      radiusMeters: 250,
+      bypassMode: false
+    };
+
+    let staffMembers = [
+      { id: 'stf-1', name: 'John Doe', role: 'Operations Lead', dept: 'Operations', avatarBg: 'bg-sky-600' },
+      { id: 'stf-2', name: 'Sarah Smith', role: 'Staff Nurse', dept: 'Emergency Dept', avatarBg: 'bg-indigo-600' },
+      { id: 'stf-3', name: 'Alex Wong', role: 'Medical Officer', dept: 'Emergency Dept', avatarBg: 'bg-emerald-600' },
+      { id: 'stf-4', name: 'Elena Rostova', role: 'Senior Pharmacist', dept: 'Pharmacy', avatarBg: 'bg-amber-600' }
+    ];
+
+    let attendanceLogs = [];
+    let activeStaffId = 'stf-1';
+
+    let userLocation = {
+      lat: null,
+      lng: null,
+      accuracy: null,
+      distance: null,
+      inRange: false,
+      error: null
+    };
+
+    let liveTimerInterval = null;
+
+    window.onload = function() {
+      loadLocalStorage();
+      initUI();
+      startClock();
+      fetchCurrentLocation();
+      setInterval(fetchCurrentLocation, 15000);
+    };
+
+    function loadLocalStorage() {
+      const savedSettings = localStorage.getItem(STORAGE_KEY_SETTINGS);
+      if (savedSettings) {
+        try { geofenceSettings = JSON.parse(savedSettings); } catch(e) {}
+      }
+
+      const savedStaff = localStorage.getItem(STORAGE_KEY_STAFF);
+      if (savedStaff) {
+        try { staffMembers = JSON.parse(savedStaff); } catch(e) {}
+      }
+
+      const savedLogs = localStorage.getItem(STORAGE_KEY_LOGS);
+      if (savedLogs) {
+        try { attendanceLogs = JSON.parse(savedLogs); } catch(e) {}
+      } else {
+        generateMockLogs();
+      }
+
+      if (staffMembers.length > 0) {
+        activeStaffId = staffMembers[0].id;
+      }
+    }
+
+    function saveStateToStorage() {
+      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(geofenceSettings));
+      localStorage.setItem(STORAGE_KEY_STAFF, JSON.stringify(staffMembers));
+      localStorage.setItem(STORAGE_KEY_LOGS, JSON.stringify(attendanceLogs));
+    }
+
+    function initUI() {
+      document.getElementById('setting-location-name').value = geofenceSettings.locationName;
+      document.getElementById('setting-latitude').value = geofenceSettings.latitude;
+      document.getElementById('setting-longitude').value = geofenceSettings.longitude;
+      document.getElementById('setting-radius').value = geofenceSettings.radiusMeters;
+      document.getElementById('radius-val-display').innerText = geofenceSettings.radiusMeters + 'm';
+      document.getElementById('bypass-geofence-toggle').checked = geofenceSettings.bypassMode || false;
+
+      const now = new Date();
+      document.getElementById('roster-month-filter').value = now.toISOString().slice(0, 7);
+
+      populateStaffDropdowns();
+      updateTerminalUI();
+      renderRosterTable();
+      renderLogsTable();
+      updateGeofenceSettingsDisplays();
+    }
+
+    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return Math.round(R * c);
+    }
+
+    function fetchCurrentLocation() {
+      const statusBadge = document.getElementById('geo-status-badge');
+
+      if (!navigator.geolocation) {
+        userLocation.error = "Geolocation not supported";
+        updateGeofenceStatusUI();
+        return;
+      }
+
+      statusBadge.innerText = "Locating GPS...";
+      
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          userLocation.lat = position.coords.latitude;
+          userLocation.lng = position.coords.longitude;
+          userLocation.accuracy = position.coords.accuracy;
+          userLocation.error = null;
+
+          const dist = calculateHaversineDistance(
+            userLocation.lat,
+            userLocation.lng,
+            geofenceSettings.latitude,
+            geofenceSettings.longitude
+          );
+
+          userLocation.distance = dist;
+          userLocation.inRange = dist <= geofenceSettings.radiusMeters;
+          updateGeofenceStatusUI();
+        },
+        (error) => {
+          userLocation.error = error.message || "Failed location fetch";
+          updateGeofenceStatusUI();
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      );
+    }
+
+    function updateGeofenceStatusUI() {
+      const distDisplay = document.getElementById('geo-distance-display');
+      const badge = document.getElementById('geo-status-badge');
+      const icon = document.getElementById('geo-status-icon');
+      const coordsDisplay = document.getElementById('user-coords-display');
+      const pulseBg = document.getElementById('geofence-pulse-bg');
+
+      if (userLocation.lat && userLocation.lng) {
+        coordsDisplay.innerText = `${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)} (±${Math.round(userLocation.accuracy)}m)`;
+      } else {
+        coordsDisplay.innerText = userLocation.error || "Location unavailable";
+      }
+
+      if (geofenceSettings.bypassMode) {
+        distDisplay.innerText = userLocation.distance !== null ? `${userLocation.distance} m` : "Bypassed";
+        badge.className = "mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30";
+        badge.innerHTML = `<i class="fa-solid fa-flask mr-1"></i> Demo Bypass Active`;
+        icon.className = "w-14 h-14 mx-auto rounded-full bg-amber-500/20 border-2 border-amber-500 flex items-center justify-center text-2xl text-amber-400 mb-2";
+        pulseBg.className = "absolute inset-0 opacity-10 transition-colors duration-500 bg-amber-500";
+      } else if (userLocation.error && userLocation.distance === null) {
+        distDisplay.innerText = "GPS Error";
+        badge.className = "mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30";
+        badge.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1"></i> Location Disabled`;
+        icon.className = "w-14 h-14 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-2xl text-red-400 mb-2";
+        pulseBg.className = "absolute inset-0 opacity-10 transition-colors duration-500 bg-red-500";
+      } else if (userLocation.inRange) {
+        distDisplay.innerText = `${userLocation.distance} m`;
+        badge.className = "mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+        badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> Inside Work Location`;
+        icon.className = "w-14 h-14 mx-auto rounded-full bg-emerald-500/20 border-2 border-emerald-500 flex items-center justify-center text-2xl text-emerald-400 mb-2 animate-pulse";
+        pulseBg.className = "absolute inset-0 opacity-15 transition-colors duration-500 bg-emerald-500";
+      } else {
+        distDisplay.innerText = `${userLocation.distance} m`;
+        badge.className = "mt-2 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30";
+        badge.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1"></i> Outside Work Location`;
+        icon.className = "w-14 h-14 mx-auto rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center text-2xl text-red-400 mb-2";
+        pulseBg.className = "absolute inset-0 opacity-10 transition-colors duration-500 bg-red-500";
+      }
+
+      updateClockButtonState();
+    }
+
+    function toggleBypassGeofence(enabled) {
+      geofenceSettings.bypassMode = enabled;
+      saveStateToStorage();
+      showToast(enabled ? "Demo Geofence Bypass Active" : "Geofence Enforcement Active", enabled ? "warning" : "info");
+      updateGeofenceStatusUI();
+    }
+
+    function populateStaffDropdowns() {
+      const select = document.getElementById('active-staff-select');
+      const filterSelect = document.getElementById('log-staff-filter');
+      const manualSelect = document.getElementById('manual-staff-id');
+
+      select.innerHTML = '';
+      filterSelect.innerHTML = '<option value="ALL">All Staff Members</option>';
+      manualSelect.innerHTML = '';
+
+      staffMembers.forEach(staff => {
+        const opt = document.createElement('option');
+        opt.value = staff.id;
+        opt.textContent = `${staff.name} (${staff.role || staff.dept})`;
+        if (staff.id === activeStaffId) opt.selected = true;
+        select.appendChild(opt);
+
+        const filterOpt = document.createElement('option');
+        filterOpt.value = staff.id;
+        filterOpt.textContent = staff.name;
+        filterSelect.appendChild(filterOpt);
+
+        const mOpt = document.createElement('option');
+        mOpt.value = staff.id;
+        mOpt.textContent = `${staff.name} (${staff.role || staff.dept})`;
+        manualSelect.appendChild(mOpt);
+      });
+    }
+
+    function onStaffSelectChange() {
+      activeStaffId = document.getElementById('active-staff-select').value;
+      updateTerminalUI();
+    }
+
+    function getActiveSession(staffId) {
+      return attendanceLogs.find(log => log.staffId === staffId && !log.checkOutTime);
+    }
+
+    function updateTerminalUI() {
+      const activeStaff = staffMembers.find(s => s.id === activeStaffId);
+      if (!activeStaff) return;
+
+      const activeSession = getActiveSession(activeStaffId);
+
+      const staffCard = document.getElementById('selected-staff-card');
+      const initials = activeStaff.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+
+      let statusBadge = activeSession 
+        ? `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"><i class="fa-solid fa-circle text-[8px] mr-1 animate-pulse"></i> Checked In</span>`
+        : `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-700 text-slate-300"><i class="fa-solid fa-moon text-[10px] mr-1"></i> Checked Out</span>`;
+
+      staffCard.innerHTML = `
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-xl ${activeStaff.avatarBg || 'bg-sky-600'} flex items-center justify-center text-white font-bold text-lg shadow-md shrink-0">
+            ${initials}
+          </div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-white text-base truncate">${activeStaff.name}</h3>
+            <p class="text-xs text-slate-400 truncate">${activeStaff.role} • ${activeStaff.dept}</p>
+          </div>
+          <div>${statusBadge}</div>
+        </div>
+      `;
+
+      const todayHours = calculateHoursForStaff(activeStaffId, 'today');
+      const monthHours = calculateHoursForStaff(activeStaffId, 'month');
+
+      document.getElementById('card-today-hours').innerText = todayHours.toFixed(2) + ' hrs';
+      document.getElementById('card-month-hours').innerText = monthHours.toFixed(2) + ' hrs';
+
+      clearInterval(liveTimerInterval);
+      const timerClock = document.getElementById('session-timer-clock');
+      const startDisplay = document.getElementById('session-start-time');
+
+      if (activeSession) {
+        const startTime = new Date(activeSession.checkInTime);
+        startDisplay.innerText = `Checked in at: ${startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+
+        const updateTimer = () => {
+          const now = new Date();
+          const diffMs = now - startTime;
+          const totalSecs = Math.floor(diffMs / 1000);
+          const hrs = String(Math.floor(totalSecs / 3600)).padStart(2, '0');
+          const mins = String(Math.floor((totalSecs % 3600) / 60)).padStart(2, '0');
+          const secs = String(totalSecs % 60).padStart(2, '0');
+          timerClock.innerText = `${hrs}:${mins}:${secs}`;
+          timerClock.className = "text-4xl font-mono font-bold text-emerald-400 tracking-wider";
+        };
+        updateTimer();
+        liveTimerInterval = setInterval(updateTimer, 1000);
+      } else {
+        timerClock.innerText = "00:00:00";
+        timerClock.className = "text-4xl font-mono font-bold text-slate-500 tracking-wider";
+        startDisplay.innerText = "Not currently checked in";
+      }
+
+      updateClockButtonState();
+      renderLiveTeamGrid();
+    }
+
+    function updateClockButtonState() {
+      const clockBtn = document.getElementById('clock-btn');
+      const btnIcon = document.getElementById('clock-btn-icon');
+      const btnText = document.getElementById('clock-btn-text');
+      const btnSubtext = document.getElementById('clock-btn-subtext');
+
+      const activeSession = getActiveSession(activeStaffId);
+      const isAllowed = userLocation.inRange || geofenceSettings.bypassMode;
+
+      if (activeSession) {
+        clockBtn.disabled = false;
+        clockBtn.className = "w-full py-5 px-6 rounded-xl font-bold text-lg shadow-lg shadow-rose-600/30 flex items-center justify-center space-x-3 transition-all duration-300 bg-rose-600 hover:bg-rose-500 text-white cursor-pointer active:scale-98";
+        btnIcon.className = "fa-solid fa-right-from-bracket text-xl";
+        btnText.innerText = "CHECK OUT NOW";
+        btnSubtext.innerText = "Conclude active shift";
+      } else {
+        if (isAllowed) {
+          clockBtn.disabled = false;
+          clockBtn.className = "w-full py-5 px-6 rounded-xl font-bold text-lg shadow-lg shadow-emerald-600/30 flex items-center justify-center space-x-3 transition-all duration-300 bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer active:scale-98";
+          btnIcon.className = "fa-solid fa-right-to-bracket text-xl";
+          btnText.innerText = "CHECK IN NOW";
+          btnSubtext.innerText = "Inside verified location radius";
+        } else {
+          clockBtn.disabled = true;
+          clockBtn.className = "w-full py-5 px-6 rounded-xl font-bold text-lg shadow-lg flex items-center justify-center space-x-3 transition-all duration-300 bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-80";
+          btnIcon.className = "fa-solid fa-lock text-xl text-slate-500";
+          btnText.innerText = "CHECK-IN LOCKED";
+          btnSubtext.innerText = "Move within " + geofenceSettings.radiusMeters + "m of target location";
+        }
+      }
+    }
+
+    function handleClockButtonClick() {
+      const activeStaff = staffMembers.find(s => s.id === activeStaffId);
+      if (!activeStaff) return;
+
+      const activeSession = getActiveSession(activeStaffId);
+      const nowISO = new Date().toISOString();
+
+      if (activeSession) {
+        // CHECK OUT
+        activeSession.checkOutTime = nowISO;
+        const checkInMs = new Date(activeSession.checkInTime).getTime();
+        const checkOutMs = new Date(nowISO).getTime();
+        activeSession.hoursWorked = Math.max(0, (checkOutMs - checkInMs) / (1000 * 60 * 60));
+
+        saveStateToStorage();
+        showToast(`Checked OUT: ${activeStaff.name}`, "info");
+      } else {
+        // CHECK IN
+        const isAllowed = userLocation.inRange || geofenceSettings.bypassMode;
+        if (!isAllowed) {
+          showToast("Check-in failed: Outside target radius", "error");
+          return;
+        }
+
+        const newLog = {
+          id: 'log-' + Date.now(),
+          staffId: activeStaff.id,
+          staffName: activeStaff.name,
+          checkInTime: nowISO,
+          checkOutTime: null,
+          hoursWorked: 0,
+          distanceMeters: userLocation.distance !== null ? userLocation.distance : 0,
+          status: geofenceSettings.bypassMode ? "BYPASS" : "VALID",
+          note: null
+        };
+
+        attendanceLogs.unshift(newLog);
+        saveStateToStorage();
+        showToast(`Checked IN: ${activeStaff.name}`, "success");
+      }
+
+      updateTerminalUI();
+      renderRosterTable();
+      renderLogsTable();
+    }
+
+    function adminForceCheckIn(staffId) {
+      const staff = staffMembers.find(s => s.id === staffId);
+      if (!staff) return;
+
+      const activeSession = getActiveSession(staffId);
+      if (activeSession) {
+        showToast(`${staff.name} is already checked in.`, "warning");
+        return;
+      }
+
+      const nowISO = new Date().toISOString();
+      const newLog = {
+        id: 'log-' + Date.now(),
+        staffId: staff.id,
+        staffName: staff.name,
+        checkInTime: nowISO,
+        checkOutTime: null,
+        hoursWorked: 0,
+        distanceMeters: 0,
+        status: "MANUAL",
+        note: "Admin Forced Check-In"
+      };
+
+      attendanceLogs.unshift(newLog);
+      saveStateToStorage();
+      updateTerminalUI();
+      renderRosterTable();
+      renderLogsTable();
+      showToast(`Admin Forced Check-In for ${staff.name}`, "success");
+    }
+
+    function adminForceCheckOut(staffId) {
+      const staff = staffMembers.find(s => s.id === staffId);
+      if (!staff) return;
+
+      const activeSession = getActiveSession(staffId);
+      if (!activeSession) {
+        showToast(`${staff.name} is not checked in.`, "warning");
+        return;
+      }
+
+      const nowISO = new Date().toISOString();
+      activeSession.checkOutTime = nowISO;
+      const checkInMs = new Date(activeSession.checkInTime).getTime();
+      const checkOutMs = new Date(nowISO).getTime();
+      activeSession.hoursWorked = Math.max(0, (checkOutMs - checkInMs) / (1000 * 60 * 60));
+      if (!activeSession.note) activeSession.note = "Admin Forced Check-Out";
+      if (activeSession.status !== "MANUAL") activeSession.status = "MANUAL";
+
+      saveStateToStorage();
+      updateTerminalUI();
+      renderRosterTable();
+      renderLogsTable();
+      showToast(`Admin Forced Check-Out for ${staff.name}`, "info");
+    }
+
+    function renderLiveTeamGrid() {
+      const grid = document.getElementById('team-live-grid');
+      grid.innerHTML = '';
+
+      let checkedInCount = 0;
+      let checkedOutCount = 0;
+
+      staffMembers.forEach(staff => {
+        const session = getActiveSession(staff.id);
+        const isCheckedIn = !!session;
+
+        if (isCheckedIn) checkedInCount++;
+        else checkedOutCount++;
+
+        const initials = staff.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-xl border transition-all ${
+          isCheckedIn 
+            ? 'bg-emerald-950/20 border-emerald-500/40 shadow-lg shadow-emerald-950/20' 
+            : 'bg-slate-900/50 border-slate-700/60 opacity-80'
+        }`;
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between mb-3">
+            <div class="flex items-center space-x-2.5">
+              <div class="w-9 h-9 rounded-lg ${staff.avatarBg || 'bg-sky-600'} text-white font-bold text-sm flex items-center justify-center">
+                ${initials}
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-sm text-white truncate">${staff.name}</h4>
+                <p class="text-[11px] text-slate-400 truncate">${staff.dept}</p>
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between text-xs pt-2 border-t border-slate-800">
+            ${
+              isCheckedIn 
+                ? `<span class="text-emerald-400 font-semibold flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span> Active</span>` 
+                : `<span class="text-slate-400 font-medium">Checked Out</span>`
+            }
+            ${
+              isCheckedIn 
+                ? `<button onclick="adminForceCheckOut('${staff.id}')" class="text-xs px-2 py-0.5 rounded bg-rose-900/40 text-rose-300 hover:bg-rose-800/60 border border-rose-700/50">Force Out</button>`
+                : `<button onclick="adminForceCheckIn('${staff.id}')" class="text-xs px-2 py-0.5 rounded bg-emerald-900/40 text-emerald-300 hover:bg-emerald-800/60 border border-emerald-700/50">Force In</button>`
+            }
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      document.getElementById('count-checked-in').innerText = checkedInCount;
+      document.getElementById('count-checked-out').innerText = checkedOutCount;
+    }
+
+    function calculateHoursForStaff(staffId, period = 'month', filterMonthStr = null) {
+      const now = new Date();
+      let total = 0;
+
+      attendanceLogs.forEach(log => {
+        if (log.staffId !== staffId) return;
+
+        const checkInDate = new Date(log.checkInTime);
+        let duration = log.hoursWorked || 0;
+
+        if (!log.checkOutTime) {
+          const liveMs = now - checkInDate;
+          duration = Math.max(0, liveMs / (1000 * 60 * 60));
+        }
+
+        if (period === 'today') {
+          if (checkInDate.toDateString() === now.toDateString()) {
+            total += duration;
+          }
+        } else if (period === 'month') {
+          const targetMonthStr = filterMonthStr || now.toISOString().slice(0, 7);
+          const logMonthStr = checkInDate.toISOString().slice(0, 7);
+          if (logMonthStr === targetMonthStr) {
+            total += duration;
+          }
+        }
+      });
+
+      return total;
+    }
+
+    function renderRosterTable() {
+      const grid = document.getElementById('roster-card-grid');
+      const searchQuery = document.getElementById('roster-search').value.toLowerCase();
+      const monthFilter = document.getElementById('roster-month-filter').value;
+      const sortBy = document.getElementById('roster-sort-by').value;
+
+      grid.innerHTML = '';
+
+      let list = staffMembers.map(staff => {
+        const todayHrs = calculateHoursForStaff(staff.id, 'today');
+        const monthHrs = calculateHoursForStaff(staff.id, 'month', monthFilter);
+        const active = !!getActiveSession(staff.id);
+        return { ...staff, todayHrs, monthHrs, active };
+      });
+
+      list = list.filter(s => 
+        s.name.toLowerCase().includes(searchQuery) || 
+        (s.role && s.role.toLowerCase().includes(searchQuery)) ||
+        (s.dept && s.dept.toLowerCase().includes(searchQuery))
+      );
+
+      list.sort((a, b) => {
+        if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
+        if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
+        if (sortBy === 'today-desc') return b.todayHrs - a.todayHrs;
+        if (sortBy === 'month-desc') return b.monthHrs - a.monthHrs;
+        return 0;
+      });
+
+      if (list.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full bg-slate-800/50 rounded-xl p-8 text-center text-slate-400 border border-slate-700">
+            <i class="fa-solid fa-users-slash text-3xl mb-2 text-slate-600 block"></i>
+            No staff profiles found.
+          </div>
+        `;
+        return;
+      }
+
+      list.forEach(staff => {
+        const initials = staff.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-800/90 border border-slate-700/70 rounded-2xl p-5 shadow-lg flex flex-col justify-between hover:border-slate-600 transition-all";
+
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between mb-4">
+              <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-xl ${staff.avatarBg || 'bg-sky-600'} text-white font-bold text-lg flex items-center justify-center shadow-md">
+                  ${initials}
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-base">${staff.name}</h3>
+                  <p class="text-xs text-slate-400">${staff.role || 'Staff'} • ${staff.dept}</p>
+                </div>
+              </div>
+              ${
+                staff.active 
+                  ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Active</span>`
+                  : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-700 text-slate-400">Offline</span>`
+              }
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+                <span class="text-[11px] text-slate-400 font-medium block">Hours Today</span>
+                <span class="text-xl font-extrabold text-sky-400">${staff.todayHrs.toFixed(2)} <span class="text-xs font-normal text-slate-400">hrs</span></span>
+              </div>
+              <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+                <span class="text-[11px] text-slate-400 font-medium block">Monthly Total</span>
+                <span class="text-xl font-extrabold text-indigo-400">${staff.monthHrs.toFixed(2)} <span class="text-xs font-normal text-slate-400">hrs</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between pt-3 border-t border-slate-700/60 text-xs">
+            <div class="space-x-2">
+              ${
+                staff.active
+                  ? `<button onclick="adminForceCheckOut('${staff.id}')" class="text-rose-400 hover:text-rose-300 font-semibold"><i class="fa-solid fa-right-from-bracket mr-1"></i>Force Out</button>`
+                  : `<button onclick="adminForceCheckIn('${staff.id}')" class="text-emerald-400 hover:text-emerald-300 font-semibold"><i class="fa-solid fa-right-to-bracket mr-1"></i>Force In</button>`
+              }
+            </div>
+            <button onclick="removeStaffMember('${staff.id}')" class="text-slate-500 hover:text-red-400 transition-colors">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    function renderLogsTable() {
+      const tbody = document.getElementById('logs-table-body');
+      const emptyState = document.getElementById('logs-empty-state');
+
+      const staffFilter = document.getElementById('log-staff-filter').value;
+      const dateFilter = document.getElementById('log-date-filter').value;
+      const statusFilter = document.getElementById('log-status-filter').value;
+      const sortOption = document.getElementById('log-sort').value;
+
+      tbody.innerHTML = '';
+
+      let logs = [...attendanceLogs];
+
+      if (staffFilter !== 'ALL') {
+        logs = logs.filter(l => l.staffId === staffFilter);
+      }
+
+      if (dateFilter) {
+        logs = logs.filter(l => {
+          const checkInDate = new Date(l.checkInTime).toISOString().slice(0, 10);
+          return checkInDate === dateFilter;
+        });
+      }
+
+      if (statusFilter !== 'ALL') {
+        logs = logs.filter(l => (l.status || "VALID") === statusFilter);
+      }
+
+      logs.sort((a, b) => {
+        if (sortOption === 'time-desc') return new Date(b.checkInTime) - new Date(a.checkInTime);
+        if (sortOption === 'time-asc') return new Date(a.checkInTime) - new Date(b.checkInTime);
+        if (sortOption === 'hours-desc') return (b.hoursWorked || 0) - (a.hoursWorked || 0);
+        if (sortOption === 'staff-asc') return a.staffName.localeCompare(b.staffName);
+        return 0;
+      });
+
+      if (logs.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      logs.forEach(log => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-700/40 transition-colors";
+
+        const inDate = new Date(log.checkInTime);
+        const outDate = log.checkOutTime ? new Date(log.checkOutTime) : null;
+
+        const formattedDate = inDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+        const inTimeStr = inDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const outTimeStr = outDate 
+          ? outDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+          : '<span class="text-amber-400 font-semibold">Active Shift</span>';
+
+        let durationText = '--';
+        if (log.hoursWorked) {
+          durationText = `${log.hoursWorked.toFixed(2)} hrs`;
+        } else if (!outDate) {
+          const liveHrs = (new Date() - inDate) / (1000 * 60 * 60);
+          durationText = `<span class="text-emerald-400 font-mono font-semibold">${liveHrs.toFixed(2)} hrs*</span>`;
+        }
+
+        let statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">GPS Check-In</span>`;
+        if (log.status === 'MANUAL') {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">Admin Override</span>`;
+        } else if (log.status === 'BYPASS') {
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">Demo Bypass</span>`;
+        }
+
+        const noteDisplay = log.note 
+          ? `<div class="text-[11px] text-amber-300 italic mt-0.5"><i class="fa-solid fa-comment-dots mr-1"></i>${log.note}</div>`
+          : '';
+
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-bold text-white flex items-center space-x-2">
+            <i class="fa-solid fa-user-clock text-slate-500 text-xs"></i>
+            <span>${log.staffName}</span>
+          </td>
+          <td class="py-3 px-4 text-slate-300">${formattedDate}</td>
+          <td class="py-3 px-4 text-emerald-400 font-mono">${inTimeStr}</td>
+          <td class="py-3 px-4 text-slate-300 font-mono">${outTimeStr}</td>
+          <td class="py-3 px-4 text-center font-medium">${durationText}</td>
+          <td class="py-3 px-4">
+            ${statusBadge}
+            ${noteDisplay}
+          </td>
+          <td class="py-3 px-4 text-right space-x-2">
+            <button onclick="editLogEntry('${log.id}')" class="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-sky-300 text-xs rounded-lg transition-all" title="Edit Check-In/Out Timestamps">
+              <i class="fa-solid fa-pen-to-square mr-1"></i>Edit
+            </button>
+            <button onclick="deleteLogEntry('${log.id}')" class="px-2.5 py-1 bg-slate-700 hover:bg-rose-600 text-slate-300 hover:text-white text-xs rounded-lg transition-all" title="Delete Log">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openManualEntryModal() {
+      document.getElementById('edit-log-id').value = '';
+      document.getElementById('manual-modal-title').innerText = "Admin Manual Entry Override";
+      document.getElementById('form-manual-log').reset();
+
+      // Pre-fill current time for easy input
+      const now = new Date();
+      const nowISO = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      document.getElementById('manual-checkin-time').value = nowISO;
+
+      document.getElementById('modal-manual-log').classList.remove('hidden');
+    }
+
+    function editLogEntry(logId) {
+      const log = attendanceLogs.find(l => l.id === logId);
+      if (!log) return;
+
+      document.getElementById('edit-log-id').value = log.id;
+      document.getElementById('manual-modal-title').innerText = "Edit Attendance Log";
+      document.getElementById('manual-staff-id').value = log.staffId;
+
+      const inDate = new Date(log.checkInTime);
+      const inISO = new Date(inDate.getTime() - inDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      document.getElementById('manual-checkin-time').value = inISO;
+
+      if (log.checkOutTime) {
+        const outDate = new Date(log.checkOutTime);
+        const outISO = new Date(outDate.getTime() - outDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('manual-checkout-time').value = outISO;
+      } else {
+        document.getElementById('manual-checkout-time').value = '';
+      }
+
+      document.getElementById('manual-reason').value = log.note || 'Manual Correction by Admin';
+      document.getElementById('modal-manual-log').classList.remove('hidden');
+    }
+
+    function closeManualLogModal() {
+      document.getElementById('modal-manual-log').classList.add('hidden');
+      document.getElementById('form-manual-log').reset();
+    }
+
+    function handleManualLogSubmit(e) {
+      e.preventDefault();
+
+      const editId = document.getElementById('edit-log-id').value;
+      const staffId = document.getElementById('manual-staff-id').value;
+      const staff = staffMembers.find(s => s.id === staffId);
+      const inTimeVal = document.getElementById('manual-checkin-time').value;
+      const outTimeVal = document.getElementById('manual-checkout-time').value;
+      const reasonVal = document.getElementById('manual-reason').value.trim() || 'Manual Override';
+
+      if (!staff || !inTimeVal) return;
+
+      const checkInISO = new Date(inTimeVal).toISOString();
+      let checkOutISO = null;
+      let hoursWorked = 0;
+
+      if (outTimeVal) {
+        checkOutISO = new Date(outTimeVal).toISOString();
+        const checkInMs = new Date(checkInISO).getTime();
+        const checkOutMs = new Date(checkOutISO).getTime();
+        hoursWorked = Math.max(0, (checkOutMs - checkInMs) / (1000 * 60 * 60));
+      }
+
+      if (editId) {
+        // UPDATE EXISTING LOG
+        const log = attendanceLogs.find(l => l.id === editId);
+        if (log) {
+          log.staffId = staff.id;
+          log.staffName = staff.name;
+          log.checkInTime = checkInISO;
+          log.checkOutTime = checkOutISO;
+          log.hoursWorked = hoursWorked;
+          log.status = "MANUAL";
+          log.note = reasonVal;
+          showToast("Attendance record updated!", "success");
+        }
+      } else {
+        // CREATE NEW MANUAL LOG
+        const newLog = {
+          id: 'log-manual-' + Date.now(),
+          staffId: staff.id,
+          staffName: staff.name,
+          checkInTime: checkInISO,
+          checkOutTime: checkOutISO,
+          hoursWorked: hoursWorked,
+          distanceMeters: 0,
+          status: "MANUAL",
+          note: reasonVal
+        };
+
+        attendanceLogs.unshift(newLog);
+        showToast("Manual log entry added!", "success");
+      }
+
+      saveStateToStorage();
+      updateTerminalUI();
+      renderRosterTable();
+      renderLogsTable();
+      closeManualLogModal();
+    }
+
+    function deleteLogEntry(logId) {
+      if (confirm("Delete this attendance log entry? This action cannot be undone.")) {
+        attendanceLogs = attendanceLogs.filter(l => l.id !== logId);
+        saveStateToStorage();
+        updateTerminalUI();
+        renderRosterTable();
+        renderLogsTable();
+        showToast("Log entry deleted.", "info");
+      }
+    }
+
+    function exportLogsCSV() {
+      if (attendanceLogs.length === 0) {
+        showToast("No attendance logs to export.", "warning");
+        return;
+      }
+
+      let csv = "Log ID,Staff Name,Date,Check In Time,Check Out Time,Hours Worked,Distance Meters,Status,Note\n";
+
+      attendanceLogs.forEach(log => {
+        const inDate = new Date(log.checkInTime);
+        const outDate = log.checkOutTime ? new Date(log.checkOutTime) : null;
+
+        const dateStr = inDate.toISOString().slice(0, 10);
+        const inTimeStr = inDate.toTimeString().slice(0, 8);
+        const outTimeStr = outDate ? outDate.toTimeString().slice(0, 8) : "N/A";
+        const hrs = log.hoursWorked ? log.hoursWorked.toFixed(2) : "0.00";
+        const note = (log.note || '').replace(/"/g, '""');
+
+        csv += `"${log.id}","${log.staffName}","${dateStr}","${inTimeStr}","${outTimeStr}",${hrs},${log.distanceMeters || 0},"${log.status || 'VALID'}","${note}"\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Attendance_Report_${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast("Exported attendance report CSV!", "success");
+    }
+
+    function loadLocationPreset(presetKey) {
+      if (presetKey === 'CGH') {
+        document.getElementById('setting-location-name').value = "Changi General Hospital (CGH)";
+        document.getElementById('setting-latitude').value = "1.3408";
+        document.getElementById('setting-longitude').value = "103.9495";
+        document.getElementById('setting-radius').value = "250";
+        document.getElementById('radius-val-display').innerText = "250m";
+        showToast("Loaded Changi General Hospital coordinates", "info");
+      } else if (presetKey === 'HQ') {
+        document.getElementById('setting-location-name').value = "Main Office HQ";
+        document.getElementById('setting-latitude').value = "1.3521";
+        document.getElementById('setting-longitude').value = "103.8198";
+        document.getElementById('setting-radius').value = "100";
+        document.getElementById('radius-val-display').innerText = "100m";
+        showToast("Loaded Main Office HQ coordinates", "info");
+      }
+    }
+
+    function saveGeofenceSettings(e) {
+      e.preventDefault();
+      geofenceSettings.locationName = document.getElementById('setting-location-name').value;
+      geofenceSettings.latitude = parseFloat(document.getElementById('setting-latitude').value);
+      geofenceSettings.longitude = parseFloat(document.getElementById('setting-longitude').value);
+      geofenceSettings.radiusMeters = parseInt(document.getElementById('setting-radius').value, 10);
+
+      saveStateToStorage();
+      updateGeofenceSettingsDisplays();
+      fetchCurrentLocation();
+      showToast("Geofence settings saved!", "success");
+    }
+
+    function updateGeofenceSettingsDisplays() {
+      document.getElementById('work-location-name-display').innerText = geofenceSettings.locationName;
+      document.getElementById('work-radius-display').innerText = geofenceSettings.radiusMeters + " meters";
+    }
+
+    function setCurrentLocationAsTarget() {
+      if (userLocation.lat && userLocation.lng) {
+        document.getElementById('setting-latitude').value = userLocation.lat.toFixed(6);
+        document.getElementById('setting-longitude').value = userLocation.lng.toFixed(6);
+        showToast("Target set to current GPS position", "info");
+      } else {
+        fetchCurrentLocation();
+        showToast("Locating device position... Try again in a second.", "warning");
+      }
+    }
+
+    function openAddStaffModal() {
+      document.getElementById('modal-add-staff').classList.remove('hidden');
+    }
+
+    function closeAddStaffModal() {
+      document.getElementById('modal-add-staff').classList.add('hidden');
+      document.getElementById('form-add-staff').reset();
+    }
+
+    function handleAddStaffSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-staff-name').value.trim();
+      const role = document.getElementById('new-staff-role').value.trim() || 'Staff';
+      const dept = document.getElementById('new-staff-dept').value;
+
+      if (!name) return;
+
+      const bgColors = ['bg-sky-600', 'bg-indigo-600', 'bg-emerald-600', 'bg-amber-600', 'bg-purple-600', 'bg-rose-600'];
+      const randomBg = bgColors[Math.floor(Math.random() * bgColors.length)];
+
+      const newStaff = {
+        id: 'stf-' + Date.now(),
+        name,
+        role,
+        dept,
+        avatarBg: randomBg
+      };
+
+      staffMembers.push(newStaff);
+      saveStateToStorage();
+      populateStaffDropdowns();
+      renderRosterTable();
+      renderLiveTeamGrid();
+      closeAddStaffModal();
+      showToast(`Added ${name} to staff roster!`, "success");
+    }
+
+    function removeStaffMember(id) {
+      if (staffMembers.length <= 1) {
+        showToast("Cannot delete the last remaining staff profile.", "warning");
+        return;
+      }
+
+      const staff = staffMembers.find(s => s.id === id);
+      if (confirm(`Remove ${staff ? staff.name : 'staff'} from roster?`)) {
+        staffMembers = staffMembers.filter(s => s.id !== id);
+        if (activeStaffId === id) {
+          activeStaffId = staffMembers[0].id;
+        }
+        saveStateToStorage();
+        populateStaffDropdowns();
+        updateTerminalUI();
+        renderRosterTable();
+        showToast("Staff profile removed.", "info");
+      }
+    }
+
+    function generateMockLogs() {
+      const now = new Date();
+      const sampleLogs = [];
+
+      staffMembers.forEach((staff) => {
+        for (let i = 1; i <= 4; i++) {
+          const d = new Date(now);
+          d.setDate(d.getDate() - i);
+          
+          d.setHours(8, Math.floor(Math.random() * 20), 0);
+          const checkIn = new Date(d).toISOString();
+
+          d.setHours(17, Math.floor(Math.random() * 30), 0);
+          const checkOut = new Date(d).toISOString();
+
+          const hrs = (new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60);
+
+          sampleLogs.push({
+            id: `log-mock-${staff.id}-${i}`,
+            staffId: staff.id,
+            staffName: staff.name,
+            checkInTime: checkIn,
+            checkOutTime: checkOut,
+            hoursWorked: hrs,
+            distanceMeters: Math.floor(Math.random() * 120) + 10,
+            status: 'VALID',
+            note: null
+          });
+        }
+      });
+
+      attendanceLogs = sampleLogs;
+      saveStateToStorage();
+    }
+
+    function loadSampleMockData() {
+      generateMockLogs();
+      updateTerminalUI();
+      renderRosterTable();
+      renderLogsTable();
+      showToast("Sample data reloaded!", "success");
+    }
+
+    function switchTab(tabKey) {
+      const tabs = ['terminal', 'roster', 'logs', 'settings'];
+
+      tabs.forEach(t => {
+        const sec = document.getElementById(`tab-${t}`);
+        const btn = document.getElementById(`nav-${t}`);
+
+        if (t === tabKey) {
+          sec.classList.remove('hidden');
+          btn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 text-sky-400 bg-slate-800 shadow-sm";
+        } else {
+          sec.classList.add('hidden');
+          btn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center space-x-2 text-slate-400 hover:text-slate-200";
+        }
+      });
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    function startClock() {
+      const timeDisplay = document.getElementById('live-time');
+      const dateDisplay = document.getElementById('live-date');
+
+      const update = () => {
+        const now = new Date();
+        timeDisplay.innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        dateDisplay.innerText = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      };
+
+      update();
+      setInterval(update, 1000);
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+
+      let iconClass = 'fa-circle-info text-sky-400';
+      let borderClass = 'border-sky-500/40 bg-slate-800';
+
+      if (type === 'success') {
+        iconClass = 'fa-circle-check text-emerald-400';
+        borderClass = 'border-emerald-500/40 bg-slate-800';
+      } else if (type === 'warning') {
+        iconClass = 'fa-triangle-exclamation text-amber-400';
+        borderClass = 'border-amber-500/40 bg-slate-800';
+      } else if (type === 'error') {
+        iconClass = 'fa-circle-xmark text-rose-400';
+        borderClass = 'border-rose-500/40 bg-slate-800';
+      }
+
+      toast.className = `pointer-events-auto flex items-center space-x-3 px-4 py-3 rounded-xl border ${borderClass} shadow-xl text-xs text-slate-200 font-medium transition-all duration-300 transform translate-x-5 opacity-0`;
+      toast.innerHTML = `
+        <i class="fa-solid ${iconClass} text-base"></i>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-x-5', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-x-5');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
